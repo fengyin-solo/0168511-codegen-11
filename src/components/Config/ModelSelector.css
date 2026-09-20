@@ -25,6 +25,39 @@
   color: var(--color-text-tertiary);
 }
 
+/* 检索命中片段高亮 */
+.model-highlight {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  padding: 0 1px;
+  border-radius: var(--radius-sm);
+}
+
 .model-description {
   font-size: var(--font-size-xs);
+}
+
+/* 模型列表加载状态提示 */
+.model-list-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-xs);
+}
+
+.model-list-retry {
+  padding: 0;
+  height: auto;
+  font-size: var(--font-size-xs);
+}
+
+/* 下拉列表为空时的提示 */
+.model-list-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
 }

@@ -112,26 +112,66 @@ export async function validateAPIKeyOnline(
 }
 
 /**
+ * 模型列表请求的默认超时时间（毫秒）
+ */
+export const MODEL_LIST_TIMEOUT = 10000;
+
+/**
+ * 模型列表请求超时错误
+ * 用于与网络错误、鉴权错误等区分，便于界面给出明确提示
+ */
+export class ModelListTimeoutError extends Error {
+  constructor(message = '获取模型列表超时，请稍后重试') {
+    super(message);
+    this.name = 'ModelListTimeoutError';
+  }
+}
+
+/**
+ * 为 Promise 增加超时限制
+ * @param promise 原始 Promise
+ * @param timeoutMs 超时时间（毫秒）
+ * @returns 带超时限制的 Promise，超时后 reject ModelListTimeoutError
+ */
+export function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new ModelListTimeoutError());
+    }, timeoutMs);
+
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      }
+    );
+  });
+}
+
+/**
  * 获取可用模型列表
  * @param apiKey API 密钥
  * @param baseUrl API 基础 URL
- * @returns 模型列表
+ * @param timeoutMs 超时时间（毫秒），默认 MODEL_LIST_TIMEOUT
+ * @returns 模型 ID 列表
+ * @throws ModelListTimeoutError 请求超时
+ * @throws 请求失败时抛出原始错误，由调用方决定如何提示
  */
 export async function fetchAvailableModels(
   apiKey: string,
-  baseUrl: string
+  baseUrl: string,
+  timeoutMs: number = MODEL_LIST_TIMEOUT
 ): Promise<string[]> {
-  try {
-    const client = new OpenAI({
-      apiKey,
-      baseURL: baseUrl,
-      dangerouslyAllowBrowser: true,
-    });
-    
-    const response = await client.models.list();
-    return response.data.map(model => model.id);
-  } catch (error) {
-    console.error('Failed to fetch models:', error);
-    return [];
-  }
+  const client = new OpenAI({
+    apiKey,
+    baseURL: baseUrl,
+    dangerouslyAllowBrowser: true,
+  });
+
+  const response = await withTimeout(client.models.list(), timeoutMs);
+  return response.data.map(model => model.id);
 }

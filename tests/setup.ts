@@ -1,12 +1,12 @@
-import { beforeAll, afterAll, afterEach } from 'vitest'
+import { afterEach } from 'vitest'
 
-// Mock localStorage
+// Mock localStorage（node 环境下挂到 globalThis，jsdom 环境下即 window.localStorage）
 const localStorageMock = (() => {
   let store: Record<string, string> = {}
   return {
-    getItem: (key: string) => store[key] || null,
+    getItem: (key: string) => store[key] ?? null,
     setItem: (key: string, value: string) => {
-      store[key] = value
+      store[key] = String(value)
     },
     removeItem: (key: string) => {
       delete store[key]
@@ -14,22 +14,20 @@ const localStorageMock = (() => {
     clear: () => {
       store = {}
     },
+    get length() {
+      return Object.keys(store).length
+    },
+    key: (index: number) => Object.keys(store)[index] ?? null,
   }
 })()
 
-Object.defineProperty(window, 'localStorage', {
+Object.defineProperty(globalThis, 'localStorage', {
   value: localStorageMock,
-})
-
-beforeAll(() => {
-  // Setup before all tests
+  configurable: true,
+  writable: true,
 })
 
 afterEach(() => {
   // Clear localStorage after each test
-  localStorage.clear()
-})
-
-afterAll(() => {
-  // Cleanup after all tests
+  localStorageMock.clear()
 })
