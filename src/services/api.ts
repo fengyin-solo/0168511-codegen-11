@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import type { APIConfig, APIMessage } from '../types';
+import type { APIConfig, APIMessage, ModelInfo } from '../types';
 
 /**
  * 创建 OpenAI 客户端实例
@@ -127,11 +127,50 @@ export async function fetchAvailableModels(
       baseURL: baseUrl,
       dangerouslyAllowBrowser: true,
     });
-    
+
     const response = await client.models.list();
     return response.data.map(model => model.id);
   } catch (error) {
     console.error('Failed to fetch models:', error);
     return [];
   }
+}
+
+/** 模型列表请求的默认超时时间（毫秒） */
+export const MODELS_FETCH_TIMEOUT = 8000;
+
+/**
+ * 判断错误是否为请求超时
+ * @param error 原始错误
+ * @returns 是否为超时错误
+ */
+export function isTimeoutError(error: unknown): boolean {
+  return error instanceof OpenAI.APIConnectionTimeoutError;
+}
+
+/**
+ * 获取可用模型列表（带超时），失败或超时时抛出异常
+ * @param apiKey API 密钥
+ * @param baseUrl API 基础 URL
+ * @param timeoutMs 超时时间（毫秒）
+ * @returns 模型列表
+ */
+export async function fetchModelList(
+  apiKey: string,
+  baseUrl: string,
+  timeoutMs: number = MODELS_FETCH_TIMEOUT
+): Promise<ModelInfo[]> {
+  const client = new OpenAI({
+    apiKey,
+    baseURL: baseUrl,
+    dangerouslyAllowBrowser: true,
+    timeout: timeoutMs,
+    maxRetries: 0,
+  });
+
+  const response = await client.models.list();
+  return response.data.map((model) => ({
+    id: model.id,
+    name: model.id,
+  }));
 }

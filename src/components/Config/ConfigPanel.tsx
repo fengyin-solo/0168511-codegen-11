@@ -76,6 +76,8 @@ export function ConfigPanel() {
           <ModelSelector
             value={config.model}
             onChange={(value) => updateConfig({ model: value })}
+            apiKey={config.apiKey}
+            baseUrl={config.baseUrl}
           />
         </section>
 
